@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.guest.likehome.admin.mapper.AdminSQLMapper">
+
+	<select id="selectByIdAndPw" resultType="com.guest.likehome.vo.AdminVo">
+		SELECT * 
+		FROM LH_ADMIN 
+		WHERE admin_id = #{admin_id} 
+		AND admin_pw = #{admin_pw}
+	</select>
+
+
+
+	<!-- 쿠폰 -->
+	<insert id="insertCoupon">
+		INSERT INTO LH_coupon VALUES(
+		LH_COUPON_seq.nextval,
+		#{coupon_name},
+		#{coupon_amount},
+		SYSDATE,
+		#{coupon_end_date},
+		NULL
+	)																					
+	</insert>
+	
+	
+	<select id="selectUnusedCoupon" resultType="com.guest.likehome.vo.CouponVo">
+		SELECT *
+		FROM LH_COUPON lc 
+		WHERE lc.COUPON_NO NOT IN (
+		SELECT lcc.COUPON_NO  
+		FROM LH_CUSTOMER_COUPON lcc 
+	)
+	</select>
+	
+	
+	<select id="selectCouponByAll" resultType="com.guest.likehome.vo.CouponVo">
+		SELECT * FROM LH_COUPON ORDER BY COUPON_NO ASC
+	</select>
+	
+	
+	<delete id="deleteCouponByCouponNo">
+		DELETE FROM LH_COUPON WHERE COUPON_NO = #{coupon_no}
+	</delete>
+	
+	
+	
+	<!--관리 -->
+	<select id="selectByVendorInfo" resultType="com.guest.likehome.vo.VendorVo">
+		SELECT t2.* FROM(		
+			SELECT t1.* , ROWNUM as rnum FROM(
+				SELECT *
+				FROM LH_VENDOR
+				<if test="searchType != null and searchWord != null">
+					<choose>
+						<when test="searchType =='vendor_brand_name'">
+							WHERE vendor_brand_name LIKE '%' || #{searchWord} || '%'
+						</when>
+					</choose>
+				</if>
+				ORDER BY vendor_no DESC
+				) t1
+			) t2
+			<![CDATA[
+			WHERE t2.rnum >= (#{pageNum}-1)*10+1 and t2.rnum <= #{pageNum}*10
+			]]>
+	</select>
+	
+	<update id="updateByVendorState">
+		UPDATE LH_VENDOR 
+		SET vendor_state = #{vendor_state}
+		WHERE vendor_no = #{vendor_no}
+	</update>
+	
+	<select id="selectByVendorState" resultType="string">
+		SELECT vendor_state FROM LH_VENDOR
+		WHERE vendor_no = #{vendor_no}
+	</select>
+	
+	<select id="getVendorCount" resultType="int">	
+		SELECT COUNT(vendor_no)
+		FROM LH_VENDOR
+		<if test="searchType != null and searchWord != null">
+			<choose>
+				<when test="searchType =='vendor_brand_name'">
+					WHERE vendor_brand_name LIKE '%' || #{searchWord} || '%'
+				</when>
+			</choose>
+		</if>
+	</select>
+	
+	<select id="selectProduct" resultType="com.guest.likehome.vo.ProductVo">
+		SELECT t2.* FROM(		
+			SELECT t1.* , ROWNUM as rnum FROM(
+				SELECT *
+				FROM LH_PRODUCT
+				<if test="searchType != null and searchWord != null">
+					<choose>
+						<when test="searchType =='product_name'">
+							WHERE product_name LIKE '%' || #{searchWord} || '%'
+						</when>
+					</choose>
+				</if>
+				ORDER BY product_no DESC
+				) t1
+			) t2
+			<![CDATA[
+			WHERE t2.rnum >= (#{pageNum}-1)*10+1 and t2.rnum <= #{pageNum}*10
+			]]>
+	</select>
+	
+	<select id="getProductCount" resultType="int">	
+		SELECT COUNT(*)
+		FROM LH_PRODUCT
+		<if test="searchType != null and searchWord != null">
+			<choose>
+				<when test="searchType =='product_name'">
+					WHERE product_name LIKE '%' || #{searchWord} || '%'
+				</when>
+			</choose>
+		</if>
+	</select>
+	
+	<select id="countVendorProduct" resultType="int">
+		SELECT COUNT(*)
+		FROM LH_PRODUCT
+		WHERE vendor_no = #{vendor_no}
+	</select>
+	
+	<select id="selectVendor" resultType="com.guest.likehome.vo.VendorVo">
+		SELECT * 
+		FROM LH_VENDOR
+		WHERE vendor_state = #{vendor_state}
+		<if test="searchType != null and searchWord != null">
+			<choose>
+				<when test="searchType =='vendor_brand_name'">
+					AND vendor_brand_name LIKE '%' || #{searchWord} || '%'
+				</when>
+			</choose>
+		</if>
+		ORDER BY vendor_no DESC
+	</select>
+	
+	<select id="selectByCustomerInfo" resultType="com.guest.likehome.vo.CustomerVo">
+		SELECT * FROM LH_Customer
+		<if test="searchTypeCustomer != null and searchWordCustomer != null">
+			<choose>
+				<when test="searchTypeCustomer =='customer_nick'">
+					WHERE customer_nick LIKE '%' || #{searchWordCustomer} || '%'
+				</when>
+			</choose>
+		</if>
+		ORDER BY customer_no DESC
+	</select>
+	
+	<select id="selectOrderByCustomer" resultType="com.guest.likehome.vo.OrderVo">
+		SELECT * 
+		FROM LH_ORDER
+		WHERE customer_no = #{customer_no}
+	</select>
+	
+	<select id="countDetailProduct" resultType="int">
+		SELECT COUNT(*) 
+		FROM LH_ORDER_DETAIL
+		WHERE order_no = #{order_no}
+	</select>
+	
+	<select id="selectCategory2" resultType="com.guest.likehome.vo.ProductCategory2Vo">
+		SELECT *
+		FROM LH_product_category2
+		WHERE product_category2_no = #{product_category2_no}
+	</select>
+	
+	<delete id="deleteProduct">
+		DELETE FROM LH_PRODUCT
+		WHERE product_no = #{product_no}
+	</delete>
+		
+	<select id="countSelectAdminId" resultType="int">
+		SELECT COUNT(*)
+		FROM LH_ADMIN
+		WHERE admin_id = #{admin_id}
+	</select>
+	
+	<select id="countSelectAdminPw" resultType="int">
+		SELECT COUNT(*)
+		FROM LH_ADMIN
+		WHERE admin_id = #{admin_id}
+		AND admin_pw = #{admin_pw}
+	</select>
+
+
+</mapper>

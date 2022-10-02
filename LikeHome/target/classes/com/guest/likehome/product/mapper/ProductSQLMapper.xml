@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.guest.likehome.product.mapper.ProductSQLMapper">
+
+<!--product  -->
+	<select id="selectProductByProductNo" resultType="com.guest.likehome.vo.ProductVo">
+		SELECT * 
+		FROM LH_PRODUCT
+		WHERE product_no = #{productNo}
+	</select>
+	
+	<select id="selectProductAll" resultType="com.guest.likehome.vo.ProductVo">
+		SELECT * 
+		FROM LH_PRODUCT
+	</select>
+
+
+	<select id="selectProductNoAllByProductCategory2No" resultType="int">
+		SELECT t2.product_no
+		FROM 
+			(
+			SELECT t1.*, ROWNUM AS rnum
+			FROM (
+				SELECT lp.product_no, lp.product_price , count(lod.order_detail_no) AS order_count
+				FROM LH_PRODUCT LP 
+					LEFT JOIN LH_ORDER_DETAIL LOD ON (lp.product_no = lod.product_no)
+				<if test="productCategory2No != 0">
+					WHERE lp.product_category2_no = #{productCategory2No}
+				</if>
+				GROUP BY lp.product_no, lp.product_price
+				<choose>
+					<when test="orderBy==0">
+						ORDER BY order_count DESC
+					</when>
+					<when test="orderBy==1">
+						ORDER BY lp.product_price DESC 
+					</when>
+					<when test="orderBy==2">
+						ORDER BY lp.product_price 
+					</when>
+				</choose>
+				) t1
+			) t2
+			<![CDATA[WHERE t2.rnum >= (#{pageNum}-1)*8+1 AND t2.rnum <= #{pageNum}*8]]>
+	</select>
+	
+	
+	<select id="selectProductNoAllByproductCategory1No" resultType="int">
+		SELECT LP.PRODUCT_NO 
+		FROM LH_PRODUCT LP ,LH_PRODUCT_CATEGORY2 LPC2 , LH_PRODUCT_CATEGORY1 LPC
+		WHERE LP.PRODUCT_CATEGORY2_NO = LPC2.PRODUCT_CATEGORY2_NO 
+		AND LPC2.PRODUCT_CATEGORY1_NO = LPC.PRODUCT_CATEGORY1_NO 
+		AND LPC.PRODUCT_CATEGORY1_NO = #{productCategory1No}
+	</select>
+	
+	
+	
+	<select id="selectProductCountByProductCategory2No" resultType="int">
+		SELECT count(DISTINCT lp.product_no)
+		FROM LH_PRODUCT LP 
+			LEFT JOIN LH_ORDER_DETAIL LOD ON (lp.product_no = lod.product_no)
+		WHERE lp.product_category2_no = #{productCategory2No}
+	</select>
+
+<!--category-->
+	<select id="selectProductCategory1All" resultType="com.guest.likehome.vo.ProductCategory1Vo">
+		SELECT *
+		FROM LH_PRODUCT_CATEGORY1 
+	</select>	
+
+	<select id="selectProductCategory2By1No" resultType="com.guest.likehome.vo.ProductCategory2Vo">
+		SELECT *
+		FROM LH_PRODUCT_CATEGORY2
+		WHERE product_category1_no = #{product_category1_no}
+	</select>	
+
+	<select id="selectProductCategory1ByNo" resultType="com.guest.likehome.vo.ProductCategory1Vo">
+		SELECT *
+		FROM LH_PRODUCT_CATEGORY1 
+		WHERE product_category1_no = #{product_category1_no}
+	</select>	
+
+
+	<select id="selectCategoryNameByProductNo" resultType="map">
+		SELECT LPC.PRODUCT_CATEGORY1_NAME , LPC2.PRODUCT_CATEGORY2_NAME 
+		FROM LH_PRODUCT_CATEGORY1 LPC , LH_PRODUCT_CATEGORY2 LPC2 , LH_PRODUCT LP 
+		WHERE LPC.PRODUCT_CATEGORY1_NO = LPC2.PRODUCT_CATEGORY1_NO 
+		AND LP.PRODUCT_CATEGORY2_NO  = LPC2.PRODUCT_CATEGORY2_NO 
+		AND LP.PRODUCT_NO = #{productNo}	
+	</select>
+	
+	<select id="selectCategoryNameByProductCategory2No" resultType="map">
+		SELECT LPC.PRODUCT_CATEGORY1_NAME , LPC2.PRODUCT_CATEGORY2_NAME 
+		FROM LH_PRODUCT_CATEGORY1 LPC , LH_PRODUCT_CATEGORY2 LPC2 
+		WHERE LPC.PRODUCT_CATEGORY1_NO = LPC2.PRODUCT_CATEGORY1_NO 
+		AND LPC2.PRODUCT_CATEGORY2_NO = #{productCategory2No}
+	</select>
+	
+	
+	
+	<!--product scrap  -->
+	<insert id="insertProductScrap">
+		INSERT INTO LH_PRODUCT_SCRAP VALUES (
+			LH_PRODUCT_SCRAP_seq.nextval,
+			#{customer_no}, 
+			#{product_no}, 
+			SYSDATE
+			)
+	</insert>
+	
+	<select id="selectProductScrapByCustomerNoAndProductNo" resultType="com.guest.likehome.vo.ProductScrapVo">
+		SELECT *
+		FROM LH_PRODUCT_SCRAP
+		WHERE CUSTOMER_NO = #{customer_no}
+		AND PRODUCT_NO = #{product_no}
+	</select>
+	
+	<delete id="deleteProductScrapByCustomerNoAndProductNo">
+		DELETE FROM LH_PRODUCT_SCRAP
+		WHERE CUSTOMER_NO = #{customer_no}
+		AND PRODUCT_NO = #{product_no}
+	</delete>
+	
+	
+	<select id="selectProductScrapByCustomerNo" resultType="com.guest.likehome.vo.ProductScrapVo">
+		SELECT *
+		FROM LH_PRODUCT_SCRAP LPS 
+		WHERE CUSTOMER_NO = #{customerNo}
+	</select>
+	
+	
+	
+	
+	<select id="selectProductByProductScrapCount" resultType="map">
+		SELECT LP.PRODUCT_NO, LP.PRODUCT_NAME, LP.PRODUCT_PRICE, LP.PRODUCT_DELIVERY_FEE, LV.VENDOR_BRAND_NAME, T1.ranking
+		FROM (
+			SELECT LPS.PRODUCT_NO , ROW_NUMBER() OVER(ORDER BY count(LPS.PRODUCT_SCRAP_NO) DESC) AS ranking
+			FROM LH_PRODUCT_SCRAP LPS
+			GROUP BY LPS.PRODUCT_NO 
+			) T1 , LH_PRODUCT LP, LH_VENDOR LV
+		WHERE T1.PRODUCT_NO = LP.PRODUCT_NO
+		AND LP.VENDOR_NO = LV.VENDOR_NO
+		AND T1.ranking BETWEEN 1 AND 30
+		ORDER BY T1.ranking
+	</select>
+	
+	
+	
+	<select id="selectProductByVendorNo" resultType="map">
+		SELECT lp.*, lv.VENDOR_BRAND_NAME 
+		FROM LH_PRODUCT lp ,LH_VENDOR lv 
+		WHERE lp.VENDOR_NO = lv.VENDOR_NO 
+		AND lv.VENDOR_NO = #{vendorNo}
+	</select>
+	
+	
+	<select id="selectProductByOrderDate" resultType="map">
+		SELECT LP.PRODUCT_NO, LP.PRODUCT_NAME, LP.PRODUCT_PRICE, LP.PRODUCT_DELIVERY_FEE, LV.VENDOR_BRAND_NAME, T1.ranking
+				FROM (
+					SELECT lod.PRODUCT_NO , ROW_NUMBER() OVER(ORDER BY count(LOD.ORDER_DETAIL_NO) DESC) AS ranking
+					FROM LH_ORDER_DETAIL lod , LH_ORDER lo 
+					WHERE lod.ORDER_NO = lo.ORDER_NO 
+					AND EXTRACT (month FROM lo.order_date) = EXTRACT (month FROM sysdate)
+					GROUP BY lod.PRODUCT_NO 
+					) T1 , LH_PRODUCT LP, LH_VENDOR LV
+				WHERE T1.PRODUCT_NO = LP.PRODUCT_NO
+				AND LP.VENDOR_NO = LV.VENDOR_NO
+				AND T1.ranking BETWEEN 1 AND 3
+				ORDER BY T1.ranking
+	</select>
+	
+	
+	<select id="selectProductByProductName" resultType="map">
+		SELECT LP.PRODUCT_NO, LP.PRODUCT_NAME, LP.PRODUCT_PRICE, LP.PRODUCT_DELIVERY_FEE, LV.VENDOR_BRAND_NAME
+		FROM LH_PRODUCT lp , LH_VENDOR lv 
+		WHERE  lp.VENDOR_NO  = lv.VENDOR_NO 
+		AND lp.PRODUCT_NAME LIKE '%소파%'
+	</select>
+	
+	
+	
+	<!-- 추가 -->
+	<select id="selectCountProductScrapByCustomerNo" resultType="int">
+		SELECT COUNT(*) FROM LH_PRODUCT_SCRAP lps WHERE CUSTOMER_NO = #{customer_no}
+	</select>
+	
+</mapper>

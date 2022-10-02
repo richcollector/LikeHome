@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.guest.likehome.help.mapper.HelpSQLMapper">
+
+	<insert id="registerHelpQna">
+		insert into LH_HELP_QNA values(
+			LH_HELP_QNA_SEQ.nextval,
+			#{customer_no},
+			#{help_qna_type_no},
+			#{help_qna_title},
+			#{help_qna_content},
+			SYSDATE,
+			null,
+			SYSDATE
+		)
+	</insert>
+
+	<select id="selectHelpQnaAll" resultType="com.guest.likehome.vo.HelpQnaVo">
+				SELECT * 
+				FROM LH_HELP_QNA
+				ORDER by help_qna_no DESC
+	</select>
+	
+	<select id="selectHelpQnaByHelpQnaNo" resultType="com.guest.likehome.vo.HelpQnaVo">
+		select * from LH_HELP_QNA where help_qna_no = #{helpQnaNo}
+	</select>
+
+	<delete id="deleteHelpQnaBoardByHelpQnaNo">
+		delete from LH_HELP_QNA where help_qna_no = #{helpQnaNo}
+	</delete>
+
+	<update id="updateHelpQnaTitleAndContent">
+		update LH_HELP_QNA 
+		SET help_qna_title = #{help_qna_title} , help_qna_content = #{help_qna_content}
+		where help_qna_no = #{help_qna_no}
+	</update>
+
+	<update id="updateQnaAnswer">
+		UPDATE LH_HELP_QNA
+		SET help_qna_answer_content = #{help_qna_answer_content} , help_qna_answerdate = SYSDATE
+		WHERE help_qna_no = #{help_qna_no}
+	</update>
+	
+	<select id="selectQnaTypeAll" resultType="com.guest.likehome.vo.HelpQnaTypeVo">
+		select * from LH_help_qna_type
+	</select>
+	
+	<select id="selectQnaTypeByhelpQnaTypeNo" resultType="com.guest.likehome.vo.HelpQnaTypeVo">
+		SELECT * FROM LH_help_qna_type
+		WHERE help_qna_type_no = #{helpQnaTypeNo}
+	</select>
+	
+	<select id="selectHelpQnaVoByAnswered" resultType="com.guest.likehome.vo.HelpQnaVo">
+		SELECT * FROM LH_HELP_QNA
+		WHERE HELP_QNA_ANSWER_CONTENT IS NOT NULL 
+		ORDER BY HELP_QNA_NO DESC
+	</select>
+	
+	<select id="selectHelpQnaVoByNotAnswered" resultType="com.guest.likehome.vo.HelpQnaVo">
+		SELECT * FROM LH_HELP_QNA
+		WHERE HELP_QNA_ANSWER_CONTENT IS NULL
+		ORDER BY HELP_QNA_NO DESC
+	</select>
+
+</mapper>

@@ -1,0 +1,429 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.guest.likehome.vendor.mapper.VendorSQLMapper"> 
+
+	<insert id="insertVendor">
+		INSERT INTO LH_VENDOR VALUES(
+		#{vendor_no},
+		#{vendor_business_number},
+		#{vendor_pw},
+		#{vendor_brand_name},
+		#{vendor_email},
+		#{vendor_phone},
+		#{vendor_address},
+		#{vendor_license_link},
+		#{vendor_license_filename},
+		#{vendor_state}
+		)
+	</insert>
+
+<!-- 	<select id="selectByBusinessAndPw" resultType="com.guest.likehome.vo.VendorVo"> -->
+<!-- 		SELECT *  -->
+<!-- 		FROM LH_VENDOR  -->
+<!-- 		WHERE vendor_business_number = #{vendor_business_number} -->
+<!-- 		AND vendor_pw = #{vendor_pw} -->
+<!-- 	</select> -->
+	<select id="selectByBusinessAndPw" resultType="com.guest.likehome.vo.VendorVo">
+		SELECT *
+		FROM LH_VENDOR lm , LH_vendor_auth_mail lvam
+		WHERE lm.vendor_no = lvam.vendor_no
+		AND lm.vendor_business_number = #{vendor_business_number}
+		AND lm.vendor_pw = #{vendor_pw}
+		AND lvam.auth_complete = 'Y'
+	</select>
+	
+	
+	<select id="createProductPk" resultType="int">
+		SELECT LH_product_seq.nextval FROM dual
+	</select>
+
+	<insert id="insertProduct">
+		INSERT INTO LH_product VALUES(
+		#{product_no},
+		#{product_category2_no},
+		#{vendor_no},
+		#{product_name},
+		#{product_price},
+		#{product_quantity_onhand},
+		#{product_delivery_fee},
+		#{product_state},
+		SYSDATE
+		)
+	</insert>
+
+	<insert id="insertTitleImage">
+		INSERT INTO LH_product_title_image VALUES(
+		LH_product_title_image_seq.nextval,
+		#{product_no},
+		#{title_image_link},
+		#{title_image_filename}
+		)
+	</insert>
+	
+	<insert id="insertDetailImage">
+		INSERT INTO LH_product_detail_image VALUES(
+		LH_product_detail_image_seq.nextval,
+		#{product_no},
+		#{detail_image_link},
+		#{detail_image_filename}
+		)
+	</insert>
+	
+	<!-- 변수명 수정 no >> vendorNo -->
+	<!-- selectByNo >> selectVendorByVendorNo  -->
+	<select id="selectVendorByVendorNo" resultType="com.guest.likehome.vo.VendorVo">
+		SELECT * FROM LH_VENDOR WHERE vendor_no = #{vendorNo}
+	</select>
+	
+	<select id="selectProductCategory" resultType="com.guest.likehome.vo.ProductCategory1Vo">
+		SELECT * FROM LH_product_category1
+		ORDER BY product_category1_no
+		ASC
+	</select>
+	
+	<select id="selectProductCategory2" resultType="com.guest.likehome.vo.ProductCategory2Vo">
+		SELECT * FROM LH_product_category2
+		ORDER BY product_category2_no
+		ASC
+	</select>
+	
+	<!-- selectProductCategory12 >> selectProductCategoryNo1ByProductCategoryNo2 -->
+	<select id="selectProductCategoryNo1ByProductCategoryNo2" resultType="com.guest.likehome.vo.ProductCategory2Vo">
+		SELECT * FROM LH_product_category2
+		WHERE product_category1_no = #{product_category1_no}
+		ORDER BY product_category2_no
+		ASC
+	</select>
+	
+	<!-- deleteProduct >> deleteProductByProductNo -->
+	<delete id="deleteProductByProductNo">
+		DELETE FROM LH_product WHERE product_no = #{product_no}
+	</delete>
+	
+	<update id="updateProduct">
+		UPDATE LH_product
+		SET product_name  = #{product_name}, 
+		product_price = #{product_price},
+		product_quantity_onhand = #{product_quantity_onhand},
+		product_delivery_fee = #{product_delivery_fee},
+		product_write_date = SYSDATE
+		WHERE product_no  = #{product_no}
+	</update>
+	
+	<select id="selectByTitleImage" resultType="com.guest.likehome.vo.ProductTitleImageVo">
+		SELECT *
+		FROM LH_PRODUCT_TITLE_IMAGE
+		WHERE product_no = #{product_no}
+		ORDER by titlle_image_no ASC
+	</select>
+	
+	<select id="selectByDetailImage" resultType="com.guest.likehome.vo.ProductDetailImageVo">
+		SELECT *
+		FROM LH_product_detail_image
+		WHERE product_no = #{product_no}
+	</select>
+	
+	<select id="selectOrderDetailAll" resultType="com.guest.likehome.vo.OrderDetailVo">
+		SELECT *
+		FROM LH_ORDER_DETAIL 
+		WHERE order_no = #{order_no}
+		ORDER BY order_detail_no DESC
+	</select>
+	
+	<select id="selectOrderDetail" resultType="com.guest.likehome.vo.OrderDetailVo">
+		SELECT *
+		FROM LH_ORDER_DETAIL 
+		WHERE product_no = #{productNo}
+		ORDER BY order_detail_no DESC
+	</select>
+	
+	<!-- selectByProduct(2개가 있어서 1개는 삭제) >> selectByProductNo (productNo통일) -->
+	<select id="selectByProductNo" resultType="com.guest.likehome.vo.ProductVo">
+		SELECT * 
+		FROM LH_PRODUCT
+		WHERE product_no = #{productNo}
+	</select>
+	
+	<!-- selectVendorProduct >> selectVendorProductByVendorNo -->
+	<select id="selectVendorProductByVendorNo" resultType="com.guest.likehome.vo.ProductVo">
+		SELECT t2.* FROM(		
+			SELECT t1.* , ROWNUM as rnum FROM(
+				SELECT * 
+				FROM LH_PRODUCT
+				WHERE vendor_no = #{vendor_no}
+				<if test="searchType != null and searchWord != null">
+					<choose>
+						<when test="searchType =='product'">
+							AND product_name LIKE '%' || #{searchWord} || '%'
+						</when>
+						<when test="searchType =='price'">
+							AND product_price LIKE '%' || #{searchWord} || '%'
+						</when>
+						<when test="searchType =='quantity'">
+							AND product_quantity_onhand LIKE '%' || #{searchWord} || '%'
+						</when>
+					</choose>
+				</if>
+				ORDER BY product_no DESC
+				) t1
+			) t2
+			<![CDATA[
+			WHERE t2.rnum >= (#{pageNum}-1)*10+1 and t2.rnum <= #{pageNum}*10
+			]]>
+	</select>
+	
+	<!-- selectOrderByorderNo >> selectOrder-->
+	<select id="selectOrder" resultType="com.guest.likehome.vo.OrderVo">
+		SELECT t2.* FROM(	
+			SELECT t1.* , ROWNUM as rnum FROM(
+				SELECT *
+				FROM LH_ORDER 
+				<if test="searchType != null and searchWord != null">
+					<choose>
+						<when test="searchType =='order_code'">
+							WHERE order_code LIKE '%' || #{searchWord} || '%'
+						</when>
+					</choose>
+				</if>
+				ORDER BY order_no DESC 
+			) t1
+		) t2
+		<![CDATA[
+		WHERE t2.rnum >= (#{pageNum}-1)*10+1 and t2.rnum <= #{pageNum}*10
+		]]>
+	</select>
+	
+	<!-- selectCount >> selectProductCountByVendorNo -->
+	<select id="selectProductCountByVendorNo" resultType="int">
+		SELECT COUNT(*) 
+		FROM LH_PRODUCT
+		WHERE vendor_no = #{vendor_no}
+		<if test="searchType != null and searchWord != null">
+			<choose>
+				<when test="searchType =='product'">
+					AND product_name LIKE '%' || #{searchWord} || '%'
+				</when>
+				<when test="searchType =='price'">
+					AND product_price LIKE '%' || #{searchWord} || '%'
+				</when>
+				<when test="searchType =='quantity'">
+					AND product_quantity_onhand LIKE '%' || #{searchWord} || '%'
+				</when>
+			</choose>
+		</if>
+	</select>
+	
+	<select id="selectOrderCount" resultType="int">
+		SELECT COUNT(*)
+		FROM LH_ORDER 
+		<if test="searchType != null and searchWord != null">
+			<choose>
+				<when test="searchType =='order_code'">
+					WHERE order_code LIKE '%' || #{searchWord} || '%'
+				</when>
+			</choose>
+		</if>
+	</select>
+	
+	<!-- selectOrderDetailByorderNo >> selectOrderDetailByOrderNo -->
+	<select id="selectOrderDetailByOrderNo" resultType="com.guest.likehome.vo.OrderVo">
+		SELECT *
+		FROM LH_ORDER 
+		WHERE order_no = #{order_no}
+	</select>
+	
+	<!-- selectOrderByorderNo2 >> selectOrderByorderNo -->
+	<select id="selectOrderByorderNo" resultType="com.guest.likehome.vo.OrderVo">
+		SELECT *
+		FROM LH_ORDER 
+		WHERE order_no = #{orderNo}
+		ORDER BY order_no DESC 
+	</select>
+	
+	<!--getCustomer >>  getCustomerByCustomerNo-->
+	<select id="getCustomerByCustomerNo" resultType="com.guest.likehome.vo.CustomerVo">
+		SELECT *
+		FROM LH_CUSTOMER
+		WHERE customer_no = #{customerNo}
+	</select>
+	
+		
+	<select id="selectProductCountByName" resultType="int">
+		SELECT COUNT(*) FROM LH_PRODUCT WHERE product_name = #{product_name}
+	</select>
+	
+	<update id="updateDelivery">
+		UPDATE LH_ORDER_DETAIL 
+		SET order_detail_delivery_status = #{delivery_statusageNum}
+		WHERE ORDER_DETAIL_NO = #{ORDER_DETAIL_NO}
+	</update>
+	
+	<select id="getDeliveryStatusNo" resultType="com.guest.likehome.vo.OrderDetailVo">
+		SELECT * FROM LH_ORDER_DETAIL
+		WHERE order_detail_no = #{detailNo}
+	</select>
+	
+	<select id="allOrderDetail" resultType="com.guest.likehome.vo.OrderDetailVo">
+		SELECT lod.* FROM LH_ORDER_DETAIL lod , LH_PRODUCT lp 
+		WHERE lod.PRODUCT_NO = lp.PRODUCT_NO
+		<if test="searchType != null and searchWord != null">
+			<choose>
+				<when test="searchType =='product_name'">
+					AND product_name LIKE '%' || #{searchWord} || '%'
+				</when>
+			</choose>
+		</if>
+	</select>
+	
+	<select id="countProduct" resultType="int">
+		SELECT count(*) FROM LH_ORDER_DETAIL
+		WHERE product_no = #{productNo}
+	</select>
+	
+	<select id="allProductScrap" resultType="com.guest.likehome.vo.ProductScrapVo">
+		SELECT lps.* FROM LH_PRODUCT_SCRAP lps , LH_PRODUCT lp 
+		WHERE lps.PRODUCT_NO = lp.PRODUCT_NO 
+		<if test="searchTypeScrap != null and searchWordScrap != null">
+			<choose>
+				<when test="searchTypeScrap =='product_name'">
+					AND product_name LIKE '%' || #{searchWordScrap} || '%'
+				</when>
+			</choose>
+		</if>
+	</select>
+	
+	<select id="countScrapProduct" resultType="int">
+		SELECT count(*) FROM LH_product_scrap
+		WHERE product_no = #{productNo}
+	</select>
+	
+	<update id="updateVendor">
+		UPDATE LH_VENDOR 
+		SET vendor_pw = #{vendor_pw},
+		vendor_email = #{vendor_email},
+		vendor_phone = #{vendor_phone},
+		vendor_address = #{vendor_address}
+		WHERE vendor_no = #{vendor_no}
+	</update>
+	
+	<select id="countSelectVendorId" resultType="int">
+		SELECT count(*) FROM LH_VENDOR
+		WHERE vendor_business_number = #{vendor_business_number}
+	</select>
+	
+	<select id="countSelectVendorPw" resultType="int">
+		SELECT count(*) FROM LH_VENDOR
+		WHERE vendor_business_number = #{vendor_business_number}
+		AND vendor_pw = #{vendor_pw}
+	</select>
+	
+	<select id="SelectVendorState" resultType="String">
+		SELECT vendor_state FROM LH_VENDOR
+		WHERE vendor_business_number = #{vendor_business_number}
+		AND vendor_pw = #{vendor_pw}
+	</select>
+	
+	<delete id="deleteProductByProductNoCart">
+		DELETE FROM LH_CART
+		WHERE product_no = #{product_no}
+	</delete>
+	
+	<delete id="deleteProductByProductNoOrderDetail">
+		DELETE FROM LH_ORDER_DETAIL
+		WHERE product_no = #{product_no}
+	</delete>
+	
+	<delete id="deleteProductByProductNoTitleImage">
+		DELETE FROM LH_product_title_image
+		WHERE product_no = #{product_no}
+	</delete>
+	
+	<delete id="deleteProductByProductNoDetailImage">
+		DELETE FROM LH_product_detail_image
+		WHERE product_no = #{product_no}
+	</delete>
+	
+	<delete id="deleteProductByProductNoScrap">
+		DELETE FROM LH_PRODUCT_SCRAP
+		WHERE product_no = #{product_no}
+	</delete>
+	
+	<delete id="deleteProductByProductNoSubpostProduct">
+		DELETE FROM LH_SUBPOST_PRODUCT
+		WHERE product_no = #{product_no}
+	</delete>
+	
+	<delete id="deleteOrderByOrderNo">
+		DELETE FROM LH_ORDER
+		WHERE order_no = #{order_no}
+	</delete>
+	
+	<select id="selectOrderDetailNoByProductNo" resultType="int">
+		SELECT order_no FROM LH_ORDER_DETAIL
+		WHERE product_no = #{product_no}
+	</select>
+	
+	<select id="selectOrderByOrder" resultType="com.guest.likehome.vo.SubpostVo">
+		SELECT * FROM LH_SUBPOST
+		WHERE order_no = #{order_no}
+	</select>
+	
+	<select id="selectCartByOrderNo" resultType="com.guest.likehome.vo.CartVo">
+		SELECT * FROM LH_CART
+		WHERE product_no = #{product_no}
+	</select>
+	
+	<select id="selectScrapByProductNo" resultType="com.guest.likehome.vo.ProductScrapVo">
+		SELECT * FROM LH_PRODUCT_SCRAP
+		WHERE product_no = #{product_no}
+	</select>
+	
+	<select id="selectVendorCountByBrand" resultType="int">
+		SELECT count(*) FROM LH_VENDOR
+		WHERE VENDOR_BRAND_NAME = #{brand_name}
+	</select>
+	
+	<select id="">
+	
+	</select>
+	
+	<update id="updateReVendor">
+		UPDATE LH_VENDOR 
+		SET vendor_pw = #{vendor_pw}
+		WHERE vendor_business_number = #{vendor_business_number}
+	</update>
+	
+	<!-- 메일인증 -->
+	<insert id="insertVendorMailAuth">
+		INSERT INTO LH_vendor_auth_mail values(
+			LH_vendor_auth_mail_seq.nextval,
+			#{vendor_no},
+			#{auth_key},
+			'N',
+			null
+		)
+	</insert>
+	
+	<update id="updateCompleteY">
+		UPDATE LH_vendor_auth_mail 
+		SET auth_complete = 'Y' , auth_date = SYSDATE
+		WHERE auth_key = #{auth_key}
+	</update>
+	
+	<select id="createVendorPk" resultType="int">
+		SELECT LH_VENDOR_seq.nextval FROM dual
+	</select>
+	
+	<select id="selectByAuth" resultType="com.guest.likehome.vo.VendorMailAuthVo">
+		SELECT *
+		FROM LH_VENDOR lm , LH_vendor_auth_mail lvam
+		WHERE lm.vendor_no = lvam.vendor_no
+		AND lm.vendor_business_number = #{vendor_business_number}
+		AND lm.vendor_pw = #{vendor_pw}
+	</select>
+	
+	
+</mapper>

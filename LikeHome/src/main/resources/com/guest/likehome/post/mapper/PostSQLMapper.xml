@@ -1,0 +1,507 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.guest.likehome.post.mapper.PostSQLMapper">
+
+	<select id="createPostPk" resultType="int">
+		SELECT LH_POST_seq.nextval FROM Dual
+	</select>
+
+	<insert id="insertPost">
+		INSERT INTO LH_POST VALUES(
+			#{post_no},
+			#{customer_no},
+			#{house_type_no},
+			#{house_style_no},
+			0,
+			SYSDATE
+		)
+	</insert>
+	
+	<insert id="inserSubPost">
+		INSERT INTO LH_SUBPOST VALUES(
+			LH_SUBPOST_seq.nextval,
+			#{post_no},
+			#{space_type_no},
+			<choose>
+			<when test="subpost_content == null">
+			NULL,
+			</when>
+			<otherwise>
+			#{subpost_content},
+			</otherwise>
+			</choose>
+			#{subpost_image_filename},
+			#{subpost_image_link}
+		)
+	</insert>
+
+	<select id="selectHouseStyleAll" resultType="com.guest.likehome.vo.HouseStyleVo">
+		SELECT * FROM LH_HOUSE_STYLE
+	</select>
+
+	<select id="selectHouseTypeAll" resultType="com.guest.likehome.vo.HouseTypeVo">
+		SELECT * FROM LH_HOUSE_TYPE
+	</select>
+
+	<select id="selectSpaceTypeAll" resultType="com.guest.likehome.vo.SpaceTypeVo">
+		SELECT * FROM LH_SPACE_TYPE
+	</select>
+
+	<select id="selectPostAll" resultType="com.guest.likehome.vo.PostVo">
+		SELECT DISTINCT  lp.* 
+		FROM LH_POST lp , LH_SUBPOST ls, LH_HOUSE_STYLE lhs , LH_HOUSE_TYPE lht , LH_SPACE_TYPE lst 
+		WHERE lp.POST_NO = ls.POST_NO
+		AND lht.HOUSE_TYPE_NO = lp.HOUSE_TYPE_NO 
+		AND lhs.HOUSE_STYLE_NO = lp.HOUSE_STYLE_NO
+		AND lst.SPACE_TYPE_NO = ls.SPACE_TYPE_NO 	
+		<choose>
+			<when test="house_type_no != 0 and house_style_no == 0 and space_type_no == 0">
+				AND lht.house_type_no = #{house_type_no}
+			</when>
+			<when test="house_type_no == 0 and house_style_no != 0 and space_type_no == 0">
+				AND lhs.house_style_no = #{house_style_no}
+			</when>
+			<when test="house_type_no != 0 and house_style_no != 0 and space_type_no == 0">
+				AND lht.house_type_no = #{house_type_no}
+				AND lhs.house_style_no = #{house_style_no}
+			</when>
+			<when test="house_type_no == 0 and house_style_no != 0 and space_type_no != 0">
+				AND lhs.house_style_no = #{house_style_no}
+				AND lst.space_type_no = #{space_type_no}
+			</when>
+			<when test="house_type_no != 0 and house_style_no != 0 and space_type_no != 0">
+				AND lht.house_type_no = #{house_type_no}
+				AND lhs.house_style_no = #{house_style_no}
+				AND lst.space_type_no = #{space_type_no}
+			</when>
+			<when test="house_type_no == 0 and house_style_no == 0 and space_type_no != 0">
+				AND lst.space_type_no = #{space_type_no}
+			</when>
+			<when test="house_type_no == 0 and house_style_no == 0 and space_type_no == 0">
+			</when>
+			<otherwise>
+			
+			</otherwise>
+		</choose>
+		
+		<choose>
+			<when test="orderby.equals('null')">
+				ORDER BY lp.POST_NO DESC
+			</when>
+			<when test="orderby.equals('최신순')">
+				ORDER BY lp.POST_NO DESC
+			</when>
+			<when test="orderby.equals('과거순')">
+				ORDER BY lp.POST_NO ASC
+			</when>
+			<otherwise>
+				ORDER BY lp.POST_NO DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+		<select id="selectSubPostByPostNo" resultType="com.guest.likehome.vo.SubpostVo">
+		SELECT * 
+		FROM LH_SUBPOST
+		WHERE POST_NO = #{post_no}
+		ORDER BY SUBPOST_NO ASC
+	</select>
+	
+	<select id="selectPostCommentListByPostNo"  resultType="com.guest.likehome.vo.PostCommentVo">
+		SELECT * FROM LH_POST_COMMENT WHERE post_no = #{post_no} ORDER BY POST_COMMENT_NO DESC
+	</select>
+	
+	<insert id="insertPostLike">
+		INSERT INTO LH_POST_LIKE VALUES(
+			LH_POST_LIKE_seq.nextval,
+			#{customer_no},
+			#{post_no},
+			SYSDATE
+		)
+	</insert>
+	
+	<delete id="deletePostLikeByCustomerNoAndPostNo">
+		DELETE FROM LH_POST_LIKE WHERE customer_no = #{customer_no} AND post_no= #{post_no}
+	</delete>
+	
+	<select id="selectPostLikeByPostNoAndCustomerNo" resultType="com.guest.likehome.vo.PostLikeVo">
+		SELECT * 
+		FROM LH_POST_LIKE
+		WHERE customer_no = #{customer_no}
+		AND post_no= #{post_no}
+	</select>
+
+	<insert id="insertPostScrap">
+		INSERT INTO LH_POST_SCRAP VALUES(
+			LH_POST_SCRAP_seq.nextval,
+			#{customer_no},
+			#{post_no},
+			SYSDATE
+		)
+	</insert>
+	
+	<delete id="deletePostScrapByCustomerNoAndPostNo">
+		DELETE FROM LH_POST_SCRAP WHERE customer_no = #{customer_no} AND post_no= #{post_no}
+	</delete>
+	
+	<select id="selectPostScrapByPostNoAndCustomerNo" resultType="com.guest.likehome.vo.PostScrapVo">
+		SELECT * 
+		FROM LH_POST_SCRAP
+		WHERE customer_no = #{customer_no}
+		AND post_no= #{post_no}
+	</select>
+	
+	<select id="selectCountPostLike" resultType="_int">
+		SELECT count(*) FROM LH_POST_LIKE WHERE POST_NO = #{post_no}
+	</select>
+	
+	<select id="selectCountPostComment" resultType="_int">
+		SELECT count(*) FROM LH_POST_COMMENT WHERE POST_NO = #{post_no}
+	</select>
+	
+	<select id="selectCountPostScrap" resultType="_int">
+		SELECT count(*) FROM LH_POST_SCRAP WHERE POST_NO = #{post_no}
+	</select>
+	
+	<select id="selectCustomerVoByPostNo" resultType="com.guest.likehome.vo.CustomerVo">
+		SELECT lc.* 
+		FROM LH_POST lp , LH_CUSTOMER lc  
+		WHERE lp.CUSTOMER_NO = lc.CUSTOMER_NO 
+		AND POST_NO = #{post_no}
+	</select>
+	
+	<select id="selectPostByPostNo" resultType="com.guest.likehome.vo.PostVo">
+		SELECT * FROM LH_POST WHERE POST_NO = #{post_no}
+	</select>
+	
+	<select id="selectHouseTypeNameByPostNo" resultType="string">
+		SELECT lht.HOUSE_TYPE_NAME
+		FROM LH_POST lp, LH_HOUSE_TYPE lht , LH_HOUSE_STYLE lhs 
+		WHERE lp.HOUSE_TYPE_NO = lht.HOUSE_TYPE_NO 
+		AND lp.HOUSE_STYLE_NO = lhs.HOUSE_STYLE_NO 
+		AND lp.POST_NO = #{post_no}
+	</select>
+	
+	<select id="selectHouseStyleNameByPostNo" resultType="string">
+		SELECT lhs.HOUSE_STYLE_NAME 
+		FROM LH_POST lp, LH_HOUSE_TYPE lht , LH_HOUSE_STYLE lhs 
+		WHERE lp.HOUSE_TYPE_NO = lht.HOUSE_TYPE_NO 
+		AND lp.HOUSE_STYLE_NO = lhs.HOUSE_STYLE_NO 
+		AND lp.POST_NO = #{post_no}
+	</select>
+	
+	<select id="selectSpaceTypeNameBySubpostNo" resultType="String">
+		SELECT lst.SPACE_TYPE_NAME 
+		FROM LH_SUBPOST ls , LH_SPACE_TYPE lst 
+		WHERE ls.SPACE_TYPE_NO = lst.SPACE_TYPE_NO 
+		AND ls.SUBPOST_NO = #{subpost_no}
+	</select>
+	
+	<select id="selectSubPostHashtagBySubpostNo" resultType="com.guest.likehome.vo.SubpostHashtagVo">
+		SELECT * FROM LH_SUBPOST_HASHTAG WHERE SUBPOST_NO = #{subpost_no}
+	</select>
+	
+	<select id="selectSubPostHashtagNameByhashtagNo" resultType="com.guest.likehome.vo.HashtagVo">
+		SELECT * FROM LH_HASHTAG WHERE HASHTAG_NO = #{hashtag_no}
+	</select>
+	
+	<select id="selectPostListByPostCustomerNo" resultType="com.guest.likehome.vo.PostVo">
+		SELECT lp.* 
+		FROM LH_CUSTOMER lc , LH_POST lp 
+		WHERE lc.CUSTOMER_NO = lp.CUSTOMER_NO 
+		AND lp.CUSTOMER_NO = #{PostCustomer_no}
+	</select>
+	
+	<insert id="insertPostComment">
+		INSERT INTO LH_POST_COMMENT VALUES(
+		LH_POST_COMMENT_seq.nextval,
+ 		#{post_no},
+		#{customer_no},
+		#{post_comment_content},
+		SYSDATE
+		)
+	</insert>
+	
+	<select id="selectPostLikeByCustomerNoAndPostCommentNo" resultType="com.guest.likehome.vo.PostCommentLikeVo">
+		SELECT * 
+		FROM LH_POST_COMMENT_LIKE
+		WHERE CUSTOMER_NO = #{customer_no}
+		AND POST_COMMENT_NO = #{post_comment_no} 
+	</select>
+	
+	<insert id="insertPostCommentLike">
+			INSERT INTO LH_POST_COMMENT_LIKE VALUES(
+			LH_POST_COMMENT_LIKE_seq.nextval,
+			#{customer_no},
+			#{post_comment_no}
+		)
+	</insert>
+	
+	<delete id="deletePostCommentLikeByCustomerNoAndPostCommentNo">
+		DELETE FROM LH_POST_COMMENT_LIKE WHERE customer_no = #{customer_no} AND post_comment_no= #{post_comment_no}
+	</delete>
+	
+	<select id="selectLatestPostNoByCustomerNo" resultType="int">
+		SELECT POST_NO FROM(
+		SELECT POST_NO 
+		FROM LH_POST 
+		WHERE CUSTOMER_NO = #{customer_no} 
+		ORDER BY POST_NO DESC)
+		WHERE ROWNUM = 1
+	</select>
+	
+	<select id="selectHashtagByHashtagKeyword" resultType="com.guest.likehome.vo.HashtagVo">
+		SELECT * FROM LH_HASHTAG WHERE HASHTAG_KEYWORD LIKE #{hashtag_keyword}
+	</select>
+	
+	<insert id="insertHashtag">
+		INSERT INTO LH_HASHTAG VALUES(
+			LH_HASHTAG_seq.nextval,
+			#{hashtag_keyword}
+		)
+	</insert>
+	
+	<insert id="insertSubPostHashtag">
+		INSERT INTO LH_SUBPOST_HASHTAG VALUES(
+			LH_SUBPOST_HASHTAG_seq.nextval,
+			#{subpost_no},
+			#{hashtag_no}
+		)
+	</insert>
+	
+	<select id="selectLatestSubPostNoByPostNo" resultType="int">
+		SELECT SUBPOST_NO 
+			FROM(SELECT SUBPOST_NO 
+			FROM LH_SUBPOST 
+			WHERE POST_NO = #{post_no} 
+			ORDER BY SUBPOST_NO DESC )
+		WHERE ROWNUM = 1
+	
+	</select>
+	
+	<select id="selectHashtagNoByHashtagKeyword" resultType="int">
+		SELECT HASHTAG_NO FROM LH_HASHTAG WHERE HASHTAG_KEYWORD = #{hashtag_keyword}
+	</select>
+
+		<delete id="deletePostByPostNo">
+		DELETE FROM LH_POST WHERE POST_NO = #{post_no}
+	</delete>
+
+	<delete id="deleteSubPostHashtagBySubPostNo">
+		DELETE FROM LH_SUBPOST_HASHTAG WHERE SUBPOST_NO = #{subpost_no}
+	</delete>
+
+	<delete id="deleteSubpostByPostNo">
+		DELETE FROM LH_SUBPOST WHERE POST_NO = #{post_no}
+	</delete>
+
+	<delete id="deletePostCommentByPostNo">
+		DELETE FROM LH_POST_COMMENT WHERE POST_NO = #{post_no}
+	</delete>
+
+	<delete id="deletePostScrapByPostNo">
+		DELETE FROM LH_POST_SCRAP WHERE POST_NO = #{post_no}
+	</delete>
+
+	<delete id="deletePostLikeByPostNo">
+		DELETE FROM LH_POST_LIKE WHERE POST_NO = #{post_no}
+	</delete>
+
+	<delete id="deletePostReportByPostNo">
+		DELETE FROM LH_POST_REPORT WHERE POST_NO = #{post_no}
+	</delete>
+
+	<insert id="insertPostReport">
+		INSERT INTO LH_POST_REPORT VALUES(
+			 LH_POST_REPORT_seq.nextval,
+			 #{customer_no},
+			 #{post_no},
+			 SYSDATE)
+	</insert>
+	
+	<delete id="deletePostReportByCustomerNoAndPostNo">
+		DELETE FROM LH_POST_REPORT WHERE CUSTOMER_NO =#{customer_no} AND POST_NO = #{post_no}
+	</delete>
+	
+	<select id="selectPostReportByCustomerNoAndPostNo" resultType="com.guest.likehome.vo.PostReportVo">
+		SELECT * FROM LH_POST_REPORT WHERE CUSTOMER_NO = #{customer_no} AND POST_NO = #{post_no}
+	</select>
+	
+	<select id="selectOrderedProductByCustomerNoAndsearcWord" resultType="com.guest.likehome.vo.ProductVo">
+		SELECT DISTINCT lp.*  
+		FROM LH_PRODUCT lp, 
+			(SELECT * 
+			FROM LH_ORDER_DETAIL lod, 
+				(SELECT lo.* 
+				FROM LH_CUSTOMER lc, LH_ORDER lo 
+				WHERE lc.CUSTOMER_NO = lo.CUSTOMER_NO 
+				AND lo.CUSTOMER_NO = #{customer_no}) t1
+			WHERE lod.ORDER_NO = t1.ORDER_NO)t2 
+		WHERE t2.PRODUCT_NO = lp.PRODUCT_NO 
+		<if test="searchWord != null">
+			AND lp.PRODUCT_NAME LIKE  '%' || #{searchWord} || '%'
+		</if>
+
+	</select>
+	
+	<select id="selectVendorBrandNameByVendorNo" resultType="String">
+		 SELECT VENDOR_BRAND_NAME FROM LH_VENDOR WHERE VENDOR_NO = #{vendor_no}
+	</select>
+
+	<select id="selectProductTitleImageLinkByProductNo" resultType="com.guest.likehome.vo.ProductTitleImageVo">
+		SELECT * FROM LH_PRODUCT_TITLE_IMAGE WHERE PRODUCT_NO = #{product_no}
+	</select>
+
+	<select id="selectProductByProductNo" resultType="com.guest.likehome.vo.ProductVo">
+		SELECT * FROM LH_PRODUCT WHERE PRODUCT_NO = #{product_no}
+	</select>
+
+	<insert id="insertSubPostProduct">
+		INSERT INTO LH_SUBPOST_PRODUCT VALUES(
+			 LH_SUBPOST_PRODUCT_seq.nextval,
+			 #{subpost_no},
+			 #{product_no})
+	</insert>
+
+	<select id="selectSubPostProductBySubPostNo" resultType="com.guest.likehome.vo.SubpostProductVo">
+		SELECT * FROM LH_SUBPOST_PRODUCT WHERE SUBPOST_NO = #{subpost_no}
+	</select>
+
+	<update id="updatePostViewsSByPostNo">
+	UPDATE LH_POST SET POST_VIEWS = POST_VIEWS + 1 WHERE POST_NO = #{post_no}	
+	</update>
+
+	<insert id="insertNestedComment">
+		INSERT INTO LH_NESTED_COMMENT VALUES(
+			LH_NESTED_COMMENT_seq.nextval,
+			#{post_comment_no},
+			#{customer_no},
+			#{nested_comment_content},
+			SYSDATE
+		)
+	</insert>
+	
+	<select id="selectNestedCommentByPostCommentNo" resultType="com.guest.likehome.vo.NestedCommentVo">
+		SELECT * FROM LH_NESTED_COMMENT WHERE POST_COMMENT_NO = #{post_comment_no} 
+	</select>
+	
+	
+	<insert id="insertNestedCommentLike">
+		INSERT INTO LH_NESTED_COMMENT_LIKE VALUES(
+			LH_NESTED_COMMENT_LIKE_seq.nextval,
+			#{nested_comment_no},
+			#{customer_no}
+		)
+	</insert>
+
+	<select id="selectNestedCommentLikeByCustomerNoAndNestedCommentNo" resultType="com.guest.likehome.vo.NestedCommentLikeVo">
+		SELECT * 
+		FROM LH_NESTED_COMMENT_LIKE 
+		WHERE CUSTOMER_NO = #{customer_no}
+		AND NESTED_COMMENT_NO = #{nested_comment_no}
+	</select>
+
+
+	<delete id="deletePostCommentByPostCommentNo">
+		DELETE FROM LH_POST_COMMENT WHERE POST_COMMENT_NO = #{post_comment_no}
+	</delete>
+
+	<delete id="deleteNestedCommentByPostCommentNo">
+		DELETE FROM LH_NESTED_COMMENT WHERE POST_COMMENT_NO = #{post_comment_no}
+	</delete>
+
+
+	<!-- 포스트 카운트 -->
+	<select id="selectCountPostByCustomerNo" resultType="int">
+		SELECT COUNT(*) FROM LH_POST WHERE CUSTOMER_NO = #{customer_no}
+	</select>
+	
+	<!-- 팔로우페이지에 사용할 포스트 불러오기 -->
+	<select id="selectPostAllForFollowListPage" resultType="com.guest.likehome.vo.PostVo">
+		SELECT * FROM lh_post
+		ORDER BY post_no DESC
+	</select>
+
+	<!-- 내가 팔로우 한 사람의 포스트 가져오기 -->
+	<select id="selectMyFollowingPost" resultType="com.guest.likehome.vo.PostVo">
+		SELECT * FROM LH_POST lp
+		WHERE lp.CUSTOMER_NO IN (
+			SELECT lc.CUSTOMER_NO 
+			FROM LH_CUSTOMER lc , LH_FOLLOW lf 
+			WHERE lc.CUSTOMER_NO in (
+				SELECT lf.FOLLOWEE_NO 
+				FROM LH_CUSTOMER lc , LH_FOLLOW lf 
+				WHERE lc.CUSTOMER_NO  = lf.FOLLOWER_NO
+				AND lc.CUSTOMER_NO = #{customer_no}
+				AND lf.FOLLOWEE_NO != #{customer_no})
+		)
+		ORDER BY post_no DESC
+	</select>
+
+
+
+	<!-- 추가 -->
+      <select id="selectPostScrapByCustomerNo" resultType="com.guest.likehome.vo.PostScrapVo">
+      SELECT * FROM LH_POST_SCRAP lps WHERE CUSTOMER_NO = #{customerNo}
+   </select>
+   
+   <select id="selectPostLikeBycustomerNo" resultType="com.guest.likehome.vo.PostLikeVo">
+      SELECT * FROM LH_POST_LIKE lpl WHERE CUSTOMER_NO = #{customerNo}
+   </select>
+   
+   <select id="selectCountPostScrapByCustomerNo" resultType="int">
+      SELECT COUNT(*) FROM LH_POST_SCRAP lps WHERE CUSTOMER_NO = #{customerNo}
+   </select>
+   
+   <select id="selectCountPostLikeByCustomerNo" resultType="int">
+      SELECT COUNT(*) FROM LH_POST_LIKE lpl WHERE CUSTOMER_NO = #{customerNo}
+   </select>
+   
+   <!-- 추가 -->
+   <select id="selectPostByPostLikeCount" resultType="com.guest.likehome.vo.PostVo">
+      SELECT lp.* 
+      FROM LH_POST lp, (SELECT post_No,COUNT(*) won 
+                     FROM (SELECT  lp2.POST_NO, 
+                                lp2.CUSTOMER_NO, 
+                                lp2.HOUSE_TYPE_NO, 
+                                lp2.HOUSE_STYLE_NO, 
+                                lp2.POST_VIEWS,
+                                lp2.POST_WRITE_DATE   
+                          FROM LH_POST lp2 
+                          LEFT OUTER JOIN LH_POST_LIKE lpl2 
+                          ON(lp2.POST_NO = lpl2.POST_NO)) t1 
+                          GROUP BY POST_NO 
+                          HAVING COUNT(*) >=0 
+                          ORDER BY COUNT(*) DESC ) t2 
+      WHERE lp.POST_NO = t2.POST_NO 
+      ORDER BY t2.won DESC
+   </select>
+
+	<!-- 상품관련 -->
+	<select id="selectSubpostByProductNo" resultType="com.guest.likehome.vo.SubpostVo">
+		SELECT LS.* 
+		FROM LH_SUBPOST_PRODUCT LSP, LH_SUBPOST LS 
+		WHERE LSP.SUBPOST_NO = LS.SUBPOST_NO 
+		AND LSP.PRODUCT_NO = #{productNo}
+	</select>
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</mapper>

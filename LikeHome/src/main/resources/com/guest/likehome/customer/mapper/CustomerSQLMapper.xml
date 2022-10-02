@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.guest.likehome.customer.mapper.CustomerSQLMapper">
+
+	<!-- 고객 -->
+	<insert id="insertCustomer">
+      INSERT INTO LH_CUSTOMER VALUES(
+      #{customer_no},
+      #{customer_email},
+      #{customer_pw},
+      #{customer_nick},
+      #{customer_birth},
+      #{customer_gender},
+      SYSDATE,
+      #{customer_state},
+      #{customer_intro},
+      #{customer_profile_image},
+      #{customer_total_point},
+      #{customer_grade}
+      )
+   </insert>
+	
+	<select id="selectByEmailAndPw" resultType="com.guest.likehome.vo.CustomerVo">
+		SELECT * 
+		FROM LH_CUSTOMER 
+		WHERE CUSTOMER_EMAIL = #{customer_email}
+		AND CUSTOMER_PW = #{customer_pw}
+	</select>
+
+	<select id="selectCustomerByCustomerNo" resultType="com.guest.likehome.vo.CustomerVo">
+		SELECT * 
+		FROM LH_CUSTOMER 
+		WHERE customer_no = #{customerNo}
+	</select>
+	
+	
+	 <select id="countSelectcustomerId" resultType="int">
+         SELECT COUNT(*) FROM LH_CUSTOMER
+         WHERE customer_email = #{customer_email}
+      </select>
+      
+      <select id="countSelectcustomerPw" resultType="int">
+         SELECT COUNT(*) FROM LH_CUSTOMER
+         WHERE customer_pw = #{customer_pw}
+      </select>
+      
+	<update id="updateCustomer">
+      	UPDATE LH_CUSTOMER 
+      	SET	customer_nick = #{customer_nick},
+      	customer_birth = #{customer_birth},
+      	customer_intro = #{customer_intro},
+      	customer_profile_image = #{customer_profile_image}
+      	WHERE customer_email = #{customer_email}
+	</update>
+	
+    <update id="updateCustomerPw">
+      	UPDATE LH_CUSTOMER 
+      	SET	customer_pw = #{customer_pw}
+      	WHERE customer_email = #{customer_email}
+    </update>
+
+
+	<!-- 쿠폰 -->
+
+	<insert id="insertCustomerCoupon">
+		INSERT INTO LH_CUSTOMER_COUPON VALUES(
+		LH_CUSTOMER_COUPON_seq.nextval,
+		#{customer_no},
+		#{coupon_no},
+		NULL
+	)
+	</insert>
+	
+	<select id="selectCouponByCouponNo" resultType="com.guest.likehome.vo.CouponVo">
+		SELECT *FROM LH_COUPON WHERE COUPON_NO = #{couponNo}
+	</select>																
+
+	<select id="selectCustomerCouponAll" resultType="com.guest.likehome.vo.CustomerCouponVo">
+		SELECT *FROM LH_CUSTOMER_COUPON ORDER BY CUSTOMER_COUPON_NO ASC
+	</select>	
+
+	<select id="selectCustomerCouponByCustomerCouponNo" resultType="com.guest.likehome.vo.CustomerCouponVo">
+			SELECT *FROM LH_CUSTOMER_COUPON WHERE CUSTOMER_COUPON_NO = #{customerCouponNo}
+	</select>
+	
+	<select id="selectCustomerCouponByCustomerNo" resultType="com.guest.likehome.vo.CustomerCouponVo">
+		SELECT * FROM LH_CUSTOMER_COUPON WHERE CUSTOMER_NO  = #{customerNo}
+	</select>
+	
+	<select id="selectCustomerCouponByCouponNoAndCustomerNo" resultType="int">
+		SELECT COUNT(*) 
+		FROM LH_CUSTOMER_COUPON 
+		WHERE COUPON_NO = #{coupon_no}
+		AND CUSTOMER_NO = #{customer_no}
+	</select>
+	
+	<select id="selectCustomerCouponByCoupon" resultType="com.guest.likehome.vo.CustomerCouponVo">
+		SELECT * FROM LH_CUSTOMER_COUPON WHERE COUPON_NO = #{couponNo}
+	</select>
+	
+	<update id="updateCustomerCoupon">
+		UPDATE LH_CUSTOMER_COUPON 
+		SET COUPON_USE_DATE = SYSDATE 
+		WHERE CUSTOMER_NO = #{customer_no}
+		AND COUPON_NO = #{coupon_no}
+	</update>
+	
+ 	<select id="selectCouponByCustomerNo" resultType="com.guest.likehome.vo.CouponVo">
+		SELECT LC.*
+		FROM LH_CUSTOMER_COUPON LCC , LH_COUPON LC 
+		WHERE LCC.COUPON_NO = LC.COUPON_NO 
+		AND LCC.CUSTOMER_NO = #{customerNo}
+		AND LCC.COUPON_USE_DATE IS NULL
+ 	</select>
+		
+	<!-- 주소 -->
+	<insert id="insertAddress">
+	INSERT INTO LH_ADDRESS VALUES(
+		LH_ADDRESS_seq.nextval,
+		#{customer_no},
+		#{address_detail1},
+		#{address_detail2},
+		#{address_postcode},
+		#{address_name},
+		#{address_phone},
+		#{address_default}
+	)
+	</insert>
+	
+	
+	<select id="selectAddressByAddressNo" resultType="com.guest.likehome.vo.AddressVo">
+			SELECT * FROM LH_ADDRESS WHERE ADDRESS_NO = #{addressNo}
+	</select>
+	
+	<delete id="deleteAddressByAddressNo">
+		DELETE FROM LH_ADDRESS WHERE ADDRESS_NO = #{addressNo}
+	</delete>
+	
+	<update id="updateAddress">
+		UPDATE LH_ADDRESS 
+		SET address_detail1 = #{address_detail1} , address_detail2 = #{address_detail2} ,
+		address_postcode = #{address_postcode}, address_name = #{address_name} , address_phone = #{address_phone}
+		WHERE address_no = #{address_no}
+	</update>
+	
+	<select id="selectAddressByAddressCustomerNo" resultType="com.guest.likehome.vo.AddressVo">
+			SELECT * FROM LH_ADDRESS WHERE CUSTOMER_NO = #{addressCustomerNo}
+	</select>
+
+	<select id="selectAddressByCustomerNo" resultType="com.guest.likehome.vo.AddressVo">
+			SELECT * FROM LH_ADDRESS WHERE CUSTOMER_NO = #{customerNo}
+	</select>
+
+
+
+	<!-- 커뮤니티 -->
+	<select id="selectFollowByFollowerAndFollowee" resultType="com.guest.likehome.vo.FollowVo">
+		SELECT * 
+		FROM LH_FOLLOW
+		WHERE follower_no = #{follower_no}
+		AND followee_no = #{followee_no}
+	</select>
+		
+	<insert id="insertFollow">
+		INSERT INTO LH_FOLLOW VALUES(
+			LH_FOLLOW_seq.nextval,
+			#{follower_no},
+			#{followee_no},
+			SYSDATE
+		)
+	</insert>
+	
+	<delete id="deleteFollowByFollowerNoAndFolloweeNo">
+		DELETE FROM LH_FOLLOW WHERE follower_no = #{follower_no} AND followee_no= #{followee_no}
+	</delete>
+	
+	<select id="selectCountFollowByFollowerNo" resultType="int">
+		SELECT COUNT(*)  FROM LH_FOLLOW WHERE FOLLOWER_NO =#{follower_no}
+	</select>
+	
+	<select id="selectCountFollowByFolloweeNo" resultType="int">
+		SELECT COUNT(*) FROM LH_FOLLOW WHERE FOLLOWEE_NO = #{followee_no}
+	</select>
+	
+	<select id="selectCustomerByFollowerNo" resultType="com.guest.likehome.vo.CustomerVo">
+		SELECT lc.* FROM LH_CUSTOMER lc , LH_FOLLOW lf WHERE lc.CUSTOMER_NO = lf.FOLLOWEE_NO AND FOLLOWER_NO = #{follower_no}
+	</select>
+	
+	<select id="selectCustomerByFolloweeNo" resultType="com.guest.likehome.vo.CustomerVo">
+		SELECT lc.* FROM LH_CUSTOMER lc , LH_FOLLOW lf WHERE lc.CUSTOMER_NO = lf.FOLLOWER_NO AND FOLLOWEE_NO = #{followee_no}
+	</select>
+	
+	
+	
+	
+	
+	
+	<select id="selectCustomerCountByEmail" resultType="int">
+		SELECT count(*) FROM LH_CUSTOMER
+		WHERE customer_email = #{customer_email}
+	</select>
+	
+	<!-- 메일인증 -->
+	<insert id="insertCustomerMailAuth">
+		INSERT INTO LH_customer_auth_mail values(
+			LH_customer_auth_mail_seq.nextval,
+			#{customer_no},
+			#{auth_key},
+			'N',
+			null
+		)
+	</insert>
+	
+	<update id="updateCompleteY">
+		UPDATE LH_customer_auth_mail 
+		SET auth_complete = 'Y' , auth_date = SYSDATE
+		WHERE auth_key = #{auth_key}
+	</update>
+	
+	<select id="createCustomerPk" resultType="int">
+		SELECT LH_customer_seq.nextval FROM dual
+	</select>
+	
+	<select id="selectByAuth" resultType="com.guest.likehome.vo.CustomerMailAuthVo">
+		SELECT *
+		FROM LH_customer lm , LH_customer_auth_mail lcam
+		WHERE lm.customer_no = lcam.customer_no
+		AND lm.customer_email = #{customer_email}
+		AND lm.customer_pw = #{customer_pw}
+	</select>
+
+</mapper>

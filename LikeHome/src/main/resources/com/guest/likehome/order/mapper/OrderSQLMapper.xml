@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.guest.likehome.order.mapper.OrderSQLMapper">
+
+	<select id="createOrderPK" resultType="int">
+		select LH_ORDER_seq.nextval From Dual
+	</select>
+	
+	
+	
+	<!--cart part  -->
+	<select id="selectCartByCartNo" resultType="com.guest.likehome.vo.CartVo">
+		SELECT *
+		FROM LH_CART 
+		WHERE cart_no = #{cartNo}
+	</select>
+	
+	
+	<insert id="insertCart">
+		INSERT INTO LH_CART VALUES(
+			LH_CART_seq.nextval,
+			#{customer_no},
+			#{product_no},
+			#{cart_product_quantity},
+			SYSDATE
+			)	
+	</insert>
+
+	<select id="selectCartByCustomerNo" resultType="com.guest.likehome.vo.CartVo">
+		SELECT *
+		FROM LH_CART 
+		WHERE customer_no = #{customerNo}
+	</select>
+
+	<update id="updateCartProductQuantity">
+		UPDATE LH_CART 
+		SET cart_product_quantity = #{cart_product_quantity}
+		WHERE cart_no = #{cart_no}
+	</update>
+
+
+	<delete id="deleteCartByCartNo">
+		DELETE FROM LH_CART 
+		WHERE cart_no = #{cart_no}
+	</delete>
+	
+	<select id="selectCartByCustomerNoAndProductNo" resultType="com.guest.likehome.vo.CartVo">
+		SELECT *
+		FROM LH_CART 
+		WHERE customer_no = #{customer_no}
+		AND product_no = #{product_no}
+	</select>
+	
+	
+	
+	
+	
+	
+	<!--order part  -->
+	
+	<insert id="insertOrder">
+		INSERT INTO LH_ORDER VALUES(
+			#{order_no},
+			#{customer_no},
+			#{coupon_no},
+			#{order_code},
+			SYSDATE,
+			#{order_total_amount},
+			#{order_purchaser_name},
+			#{order_purchaser_phone},
+			#{order_receiver_name},
+			#{order_receiver_phone},
+			#{order_receiver_postcode},
+			#{order_receiver_address1},
+			#{order_receiver_address2},
+			'0'
+			)
+	</insert>
+	
+	<insert id="insertOrderDetail">
+		INSERT INTO LH_ORDER_DETAIL VALUES(
+			LH_ORDER_DETAIL_seq.nextval,	
+			#{order_no},
+			#{product_no},
+			#{order_detail_quantity},
+			#{order_detail_quote_price},
+			'0'
+			)
+	</insert>
+	
+	<select id="selectOrderDetailByOrderNo" resultType="com.guest.likehome.vo.OrderDetailVo">
+		SELECT *
+		FROM LH_ORDER_DETAIL 
+		WHERE order_no = #{orderNo}
+		<if test="deliveryStatus != 3">
+			AND order_detail_delivery_status = #{deliveryStatus}
+		</if>
+		ORDER BY order_detail_no DESC
+	</select>
+
+	<select id="selectOrderByOrderNo" resultType="com.guest.likehome.vo.OrderVo">
+		SELECT *
+		FROM LH_ORDER 
+		WHERE order_no = #{order_no}	
+	</select>
+
+	 
+
+	<select id="selectOrderByCustomerNo" resultType="com.guest.likehome.vo.OrderVo">
+		SELECT *
+		FROM LH_ORDER 
+		WHERE customer_no = #{customerNo}
+		ORDER BY order_no DESC 
+	</select>
+
+
+	<!--point  -->
+	<update id="updateCustomerTotalPoint">
+		UPDATE LH_CUSTOMER 
+		SET customer_total_point = #{customerTotalPoint}
+		WHERE customer_no = #{customerNo}
+	</update>
+
+
+
+	<!-- TEST -->
+	<select id="selectCartMap" resultType="map">
+		SELECT LP.*, LV.VENDOR_NO , LV.VENDOR_BRAND_NAME , LC.CART_NO , LC.CUSTOMER_NO , LC.CART_PRODUCT_QUANTITY 
+		FROM LH_PRODUCT LP , LH_VENDOR LV , LH_CART LC 
+		WHERE LP.VENDOR_NO = LV.VENDOR_NO 
+		AND LP.PRODUCT_NO = LC.PRODUCT_NO 
+		AND LC.CUSTOMER_NO = #{customerNo}
+	</select>
+	
+</mapper>
